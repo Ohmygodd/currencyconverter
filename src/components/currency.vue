@@ -116,6 +116,7 @@
         // calculate newly add currency from option
         var value = event.target.value;
         document.getElementById("opt"+value).remove();
+        this.addCurr=false;
         this.rates(value,0);
       },
       rates: function(curr,x) {
