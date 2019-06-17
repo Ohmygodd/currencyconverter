@@ -1,13 +1,13 @@
 <template>
   <div id="box" class="container">
     <div id="top" class="row">
-      <div class="col-lg-12">
+      <div class="col-lg-12 col-12">
         <p>USD - United States Dollars</p>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 col-6">
         <p>USD</p>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 col-6">
         <input id="currVal" type="number" name="" value="10.00" v-on:change="calculate()">
       </div>
     </div>
@@ -16,23 +16,23 @@
         <li v-for="(x , index) in rate" v-bind:key="x.name" v-bind:class="x.class">
           <div class="container">
             <div id="IDR" class="row">
-              <div id="left" class="container col-lg-10">
+              <div id="left" class="container col-lg-10 col-10">
                 <div class="row">
-                  <div class="col-lg-6">
+                  <div class="col-lg-6 col-6">
                     <p>{{ x.name }}</p>
                   </div>
-                  <div class="col-lg-6">
+                  <div class="col-lg-6 col-6">
                     <p><span class="finalamount">{{ x.total }}</span></p>
                   </div>
-                  <div class="col-lg-12">
+                  <div class="col-lg-12 col-12">
                     <p>{{ x.name }} - {{ x.currlong }}</p>
                   </div>
-                  <div class="col-lg-12">
+                  <div class="col-lg-12 col-12">
                     <p>1 USD = {{ x.name }} {{ x.exRate }}</p>
                   </div>
                 </div>
               </div>
-              <div id="del" class="col-lg-2">
+              <div id="del" class="col-lg-2 col-2">
                 <a v-on:click="removeElement(index)">(-)</a>
               </div>
             </div>
@@ -47,7 +47,7 @@
         <li id="drop" class="dropdown" v-show="addCurr">
           <div class="container">
             <div class="row">
-              <div class="col-lg-9">
+              <div class="col-lg-9 col-9">
                  <select id="slccurr" v-on:change="othercurr($event)">
                   <option readonly>Choose Currency</option>
                   <option id="optCAD" value="CAD">CAD</option>
@@ -61,7 +61,7 @@
                   <option id="optKRW" value="KRW">KRW</option>
                 </select>
               </div>
-              <div class="col-lg-3">
+              <div class="col-lg-3 col-3">
                 <input id="calc" type="submit" name="Submit">
               </div>
             </div>
@@ -92,6 +92,8 @@
       removeElement: function (index) {
         var name = this.rate[index].name;
         this.$delete(this.rate, index);
+        this.$delete(countryarr, index);
+        console.log(countryarr)
         
         var sel = document.getElementById('slccurr');
         var opt = document.createElement('option');
@@ -148,45 +150,21 @@
                   {name: curr, exRate: exRate, currlong:currtxt, class:'li'+curr}
                 );
                 this.result(exRate,0);
-                // html += '<li id="li'+curr+'">'+
-                //       '<div class="container">'+
-                //         '<div id="IDR" class="row">'+
-                //           '<div id="left" class="container col-lg-10">'+
-                //             '<div class="row">'+
-                //               '<div class="col-lg-6">'+
-                //                 '<p>'+curr+'</p>'+
-                //               '</div>'+
-                //               '<div class="col-lg-6">'+
-                //                 '<p><span class="finalamount">'+this.result(exRate,0)+'<span></p>'+
-                //               '</div>'+
-                //               '<div class="col-lg-12">'+
-                //                 '<p>'+curr+' - '+currtxt+'</p>'+
-                //               '</div>'+
-                //               '<div class="col-lg-12">'+
-                //                 '<p>1 USD = '+curr+' '+exRate+'</p>'+
-                //               '</div>'+
-                //             '</div>'+
-                //           '</div>'+
-                //           '<div id="del" class="col-lg-2">'+
-                //             '<a v-on:click="delCurr(\''+curr+'\')">(-)</a>'+
-                //           '</div>'+
-                //         '</div>'+
-                //       '</div>'+
-                //     '</li>'
                 $('.loading').css({'display':'none'});
-                // $('.convert').append(html);
-                // raddCurr();
               })
               .catch((error) => console.log(error));
           }
         }
       },
       result: function (x,y) {
+        $('.loading').css({'display':'block'});
         var base_amount = $('#currVal').val();
+    console.log("Calc Result")
+    console.log(this.rate)
         if (y == 0) {
           var index = this.rate.length - 1;
 
-          var final = base_amount*x;
+          var final = base_amount*x.toFixed(4);
           var name = this.rate[index].name;
           var exRate = this.rate[index].exRate;
           var c = this.rate[index].class;
@@ -194,10 +172,14 @@
 
           this.$delete(this.rate, index);
           this.rate.push(
-            {name: name, exRate: exRate.toFixed(2), currlong:currlong, class:c, total:final.toFixed(2)}
+            {name: name, exRate: exRate.toFixed(4), currlong:currlong, class:c, total:final.toFixed(4)}
           );
         }else{
           var c = countryarr.toString();
+          console.log("arr length")
+          console.log(countryarr.length)
+          console.log(this.rate.length)
+          console.log(this.rate)
           axios.get("https://api.exchangeratesapi.io/latest?base=USD&symbols="+c)
             .then(response => {
               for (var i=countryarr.length-1; i>=0; i--) {
@@ -207,21 +189,22 @@
                 var c="";
                 var currlong="";
 
+    console.log("Calc change Result "+[i])
+    console.log(this.rate[i])
                 var rate = response.data.rates;
                 var exRate = rate[countryarr[i]];
-                console.log(countryarr[i] +'-' +exRate)
-                  final = base_amount*exRate;
-                  name = this.rate[i].name;
-                  c = this.rate[i].class;
-                  currlong = this.rate[i].currlong;
-                  this.$delete(this.rate, i);
-                  this.rate.push(
-                    {name: name, exRate: exRate, currlong:currlong, class:c, total:final.toFixed(2)}
-                  );
+                final = base_amount*exRate.toFixed(4);
+                name = this.rate[i].name;
+                c = this.rate[i].class;
+                currlong = this.rate[i].currlong;
+                this.$delete(this.rate, i);
+                this.rate.push(
+                  {name: name, exRate: exRate.toFixed(4), currlong:currlong, class:c, total:final.toFixed(4)}
+                );
               }
           })
-          
         }
+        $('.loading').css({'display':'none'});
       }
     }
   }
@@ -257,11 +240,6 @@
   #del a {
     cursor: pointer;
     line-height: 102px;}
-  /* ul#add li {
-    cursor: pointer;
-    display: none;}
-  ul#add li.active {
-    display: block;} */
   #drop .row div{
     padding: 0;}
   #slccurr,
@@ -269,4 +247,10 @@
     width: 100%;
     height: 100%;
     border: none;}
+  #currVal {
+    width: 100%;}
+  @media only screen and (max-width: 768px) {
+    #box {
+      width: auto;}
+  }
 </style>
