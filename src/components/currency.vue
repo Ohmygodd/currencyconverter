@@ -9,7 +9,7 @@
       </div>
       <div class="col-lg-6 col-6">
         <!-- ammount input -->
-        <input id="currVal" type="number" name="" value="10.00" v-on:change="calculate()">
+        <input id="currVal" type="number" name="" placeholder="10.00" v-on:change="calculate()">
       </div>
     </div>
     <div id="body" class="row">
@@ -177,6 +177,9 @@
         // calculate amount base on exchange rate
         $('.loading').css({'display':'block'});
         var base_amount = $('#currVal').val();
+        if (base_amount == "" || base_amount < 1) {
+          base_amount=10;
+        }
         
         if (y == 0) {// calculate amount from rates method
           var index = this.rate.length - 1;
