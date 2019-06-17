@@ -8,22 +8,21 @@
         <p>USD</p>
       </div>
       <div class="col-lg-6">
-        <input id="currVal" type="number" name="" value="10.00" oninput="calculate();">
+        <input id="currVal" type="number" name="" value="10.00" v-on:change="calculate()">
       </div>
     </div>
-
     <div id="body" class="row">
-      <ul class="convert"></ul>
+      <ul class="convert">{{currency}}</ul>
       <ul id="add" class="add">
         <li class="loading" style="display: none;">load currency rate...</li>
         <li id="plus" class="active">
-          <a onclick="addCurr();">(+) Add More Currencies</a>
+          <a v-on:click="addCurr = !addCurr">(+) Add More Currencies</a>
         </li>
-        <li id="drop" class="dropdown">
+        <li id="drop" class="dropdown" v-show="addCurr">
           <div class="container">
             <div class="row">
               <div class="col-lg-9">
-                 <select id="slccurr" v-on:change="othercurr">
+                 <select id="slccurr" v-on:change="othercurr($event)">
                   <option readonly>Choose Currency</option>
                   <option id="optCAD" value="CAD">CAD</option>
                   <option id="optIDR" value="IDR">IDR</option>
@@ -48,37 +47,32 @@
 </template>
 
 <script>
-function addCurr() {
-    $("#drop").addClass("active");
-    $("#plus").removeClass("active");
-  }
-  function raddCurr() {
-    $("#plus").addClass("active");
-    $("#drop").removeClass("active");
-  }
-  function delCurr(x) {
-    $('#li'+x).remove();
-    var sel = document.getElementById('slccurr');
-    var opt = document.createElement('option');
-    opt.appendChild(document.createTextNode(x));
-    opt.id = "opt"+x;
-    opt.value = x;
-    sel.appendChild(opt);
-  }
-  function calculate(){
-    currencies.rates("",1);
-  }
-</script>
-<script>
+  import axios from 'axios';
   var countryarr=[];
-  var currencies = new Vue({
-    data: {
-      rate: ''
+  var currtxt;
+  export default {
+    data(){
+      return{
+        currency: '',
+        addCurr : true,
+        rate: ''
+      }
     },
-    el: '#box',
     methods: {
-      othercurr: function(e) {
-        var value = e.target.value;
+      delCurr(x) {
+        $('#li'+x).remove();
+        var sel = document.getElementById('slccurr');
+        var opt = document.createElement('option');
+        opt.appendChild(document.createTextNode(x));
+        opt.id = "opt"+x;
+        opt.value = x;
+        sel.appendChild(opt);
+      },
+      calculate(){
+        this.rates("",1);
+      },
+      othercurr(event) {
+        var value = event.target.value;
         document.getElementById("opt"+value).remove();
         this.rates(value,0);
       },
@@ -115,6 +109,7 @@ function addCurr() {
             $('.loading').css({'display':'block'});
             axios.get("https://api.exchangeratesapi.io/latest?base=USD&symbols="+curr)
               .then(response => {
+                console.log(response.data)
                 var html='';
                 var rate = response.data.rates;
                 var exRate = rate[curr];
@@ -138,18 +133,18 @@ function addCurr() {
                             '</div>'+
                           '</div>'+
                           '<div id="del" class="col-lg-2">'+
-                            '<a onclick="delCurr(\''+curr+'\');">(-)</a>'+
+                            '<a v-on:click="delCurr(\''+curr+'\')">(-)</a>'+
                           '</div>'+
                         '</div>'+
                       '</div>'+
                     '</li>'
                 $('.loading').css({'display':'none'});
                 $('.convert').append(html);
+                this.$forceUpdate();
                 raddCurr();
               })
               .catch((error) => console.log(error));
           }
-          
         }
       },
       result: function (x,y) {
@@ -174,12 +169,12 @@ function addCurr() {
         }
       }
     }
-  })
+  }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-#box {
+  #box {
     width: 450px;
     margin: 50px auto;
     border: 1px solid #555;}
@@ -207,11 +202,11 @@ function addCurr() {
   #del a {
     cursor: pointer;
     line-height: 102px;}
-  ul#add li {
+  /* ul#add li {
     cursor: pointer;
     display: none;}
   ul#add li.active {
-    display: block;}
+    display: block;} */
   #drop .row div{
     padding: 0;}
   #slccurr,
