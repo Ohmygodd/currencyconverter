@@ -12,7 +12,33 @@
       </div>
     </div>
     <div id="body" class="row">
-      <ul class="convert">{{currency}}</ul>
+      <ul class="convert">
+        <li v-for="(x , index) in rate" v-bind:key="x.name" v-bind:class="x.class">
+          <div class="container">
+            <div id="IDR" class="row">
+              <div id="left" class="container col-lg-10">
+                <div class="row">
+                  <div class="col-lg-6">
+                    <p>{{ x.name }}</p>
+                  </div>
+                  <div class="col-lg-6">
+                    <p><span class="finalamount">{{ x.total }}</span></p>
+                  </div>
+                  <div class="col-lg-12">
+                    <p>{{ x.name }} - {{ x.currlong }}</p>
+                  </div>
+                  <div class="col-lg-12">
+                    <p>1 USD = {{ x.name }} {{ x.exRate }}</p>
+                  </div>
+                </div>
+              </div>
+              <div id="del" class="col-lg-2">
+                <a v-on:click="removeElement(index)">(-)</a>
+              </div>
+            </div>
+          </div>
+        </li>
+      </ul>
       <ul id="add" class="add">
         <li class="loading" style="display: none;">load currency rate...</li>
         <li id="plus" class="active">
@@ -55,17 +81,23 @@
       return{
         currency: '',
         addCurr : true,
-        rate: ''
+        rate: [
+        ]
       }
     },
     methods: {
-      delCurr(x) {
-        $('#li'+x).remove();
+      calculate(){
+        this.rates("",1);
+      },
+      removeElement: function (index) {
+        var name = this.rate[index].name;
+        this.$delete(this.rate, index);
+        
         var sel = document.getElementById('slccurr');
         var opt = document.createElement('option');
-        opt.appendChild(document.createTextNode(x));
-        opt.id = "opt"+x;
-        opt.value = x;
+        opt.appendChild(document.createTextNode(name));
+        opt.id = "opt"+name;
+        opt.value = name;
         sel.appendChild(opt);
       },
       calculate(){
@@ -109,39 +141,41 @@
             $('.loading').css({'display':'block'});
             axios.get("https://api.exchangeratesapi.io/latest?base=USD&symbols="+curr)
               .then(response => {
-                console.log(response.data)
                 var html='';
                 var rate = response.data.rates;
                 var exRate = rate[curr];
-                html += '<li id="li'+curr+'">'+
-                      '<div class="container">'+
-                        '<div id="IDR" class="row">'+
-                          '<div id="left" class="container col-lg-10">'+
-                            '<div class="row">'+
-                              '<div class="col-lg-6">'+
-                                '<p>'+curr+'</p>'+
-                              '</div>'+
-                              '<div class="col-lg-6">'+
-                                '<p><span class="finalamount">'+this.result(exRate,0)+'<span></p>'+
-                              '</div>'+
-                              '<div class="col-lg-12">'+
-                                '<p>'+curr+' - '+currtxt+'</p>'+
-                              '</div>'+
-                              '<div class="col-lg-12">'+
-                                '<p>1 USD = '+curr+' '+exRate+'</p>'+
-                              '</div>'+
-                            '</div>'+
-                          '</div>'+
-                          '<div id="del" class="col-lg-2">'+
-                            '<a v-on:click="delCurr(\''+curr+'\')">(-)</a>'+
-                          '</div>'+
-                        '</div>'+
-                      '</div>'+
-                    '</li>'
+                this.rate.push(
+                  {name: curr, exRate: exRate, currlong:currtxt, class:'li'+curr}
+                );
+                this.result(exRate,0);
+                // html += '<li id="li'+curr+'">'+
+                //       '<div class="container">'+
+                //         '<div id="IDR" class="row">'+
+                //           '<div id="left" class="container col-lg-10">'+
+                //             '<div class="row">'+
+                //               '<div class="col-lg-6">'+
+                //                 '<p>'+curr+'</p>'+
+                //               '</div>'+
+                //               '<div class="col-lg-6">'+
+                //                 '<p><span class="finalamount">'+this.result(exRate,0)+'<span></p>'+
+                //               '</div>'+
+                //               '<div class="col-lg-12">'+
+                //                 '<p>'+curr+' - '+currtxt+'</p>'+
+                //               '</div>'+
+                //               '<div class="col-lg-12">'+
+                //                 '<p>1 USD = '+curr+' '+exRate+'</p>'+
+                //               '</div>'+
+                //             '</div>'+
+                //           '</div>'+
+                //           '<div id="del" class="col-lg-2">'+
+                //             '<a v-on:click="delCurr(\''+curr+'\')">(-)</a>'+
+                //           '</div>'+
+                //         '</div>'+
+                //       '</div>'+
+                //     '</li>'
                 $('.loading').css({'display':'none'});
-                $('.convert').append(html);
-                this.$forceUpdate();
-                raddCurr();
+                // $('.convert').append(html);
+                // raddCurr();
               })
               .catch((error) => console.log(error));
           }
@@ -150,19 +184,40 @@
       result: function (x,y) {
         var base_amount = $('#currVal').val();
         if (y == 0) {
+          var index = this.rate.length - 1;
+
           var final = base_amount*x;
-          return final.toFixed(2);
+          var name = this.rate[index].name;
+          var exRate = this.rate[index].exRate;
+          var c = this.rate[index].class;
+          var currlong = this.rate[index].currlong;
+
+          this.$delete(this.rate, index);
+          this.rate.push(
+            {name: name, exRate: exRate.toFixed(2), currlong:currlong, class:c, total:final.toFixed(2)}
+          );
         }else{
           var c = countryarr.toString();
           axios.get("https://api.exchangeratesapi.io/latest?base=USD&symbols="+c)
             .then(response => {
-              for (var i=0; i<countryarr.length; i++) {
+              for (var i=countryarr.length-1; i>=0; i--) {
+                var final="";
+                var name="";
+                var exRate="";
+                var c="";
+                var currlong="";
+
                 var rate = response.data.rates;
                 var exRate = rate[countryarr[i]];
-                $("#li"+countryarr[i]+" span.finalamount").text(function() {
-                  var final = base_amount*exRate;
-                  return final.toFixed(2);
-                });
+                console.log(countryarr[i] +'-' +exRate)
+                  final = base_amount*exRate;
+                  name = this.rate[i].name;
+                  c = this.rate[i].class;
+                  currlong = this.rate[i].currlong;
+                  this.$delete(this.rate, i);
+                  this.rate.push(
+                    {name: name, exRate: exRate, currlong:currlong, class:c, total:final.toFixed(2)}
+                  );
               }
           })
           
